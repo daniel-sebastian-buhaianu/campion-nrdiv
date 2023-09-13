@@ -1,54 +1,78 @@
 #include <stdio.h>
-
-#define NMAX 50
-#define VMAX 10000000000000
-
-unsigned nrdiv(unsigned long long x)
-{
-	if (x == 1) return 1;
-
-	unsigned d = 2, nrd = 2;
-
-	while (d*d < x) {
-		if (x % d == 0) nrd += 2; // doi divizori: d, x/d
-
-		d++;
-	}
-
-	if (d*d == x) nrd++; // caz x patrat perfect
-
-	return nrd;
-}
+#include <stdlib.h>
+#include <math.h>
 
 int main()
 {
+	char *ciur;
+	unsigned short n;
+	unsigned i, radmax, d, j, nrprime, *prim, p, nrd;
+	unsigned long long *v, max;
+
 	FILE *fin = fopen("nrdiv.in", "r");
 
 	if (!fin) { printf("Eroare citire nrdiv.in\n"); return 1; }
-	
-	unsigned short n;
 
 	fscanf(fin, "%hu", &n);
 
-	if (n < 1 || n > NMAX) { printf("Eroare valoare n\n"); return 2; }
+	v = (unsigned long long*)calloc(n, sizeof(unsigned long long));
 
-	unsigned short i;
-	unsigned long long x;
+	if (!v) { printf("Eroare alocare memorie\n"); return 2; }	
+
+	for (max = i = 0; i < n; i++) {
+		fscanf(fin, "%llu", &v[i]);
+
+		if (v[i] > max) max = v[i];
+	}
+
+	fclose(fin);
+	
+	radmax = sqrt(max);
+
+	ciur = (char*)calloc(radmax, sizeof(char));
+
+	for (d = 2; d*d < radmax; d++)
+		if (!ciur[d])
+			for (j = d*d; j <= radmax; j += d)
+				ciur[j] = 1;
+
+	prim = (unsigned*)calloc(1, sizeof(unsigned));
+
+	if (!prim) { printf("Eroare alocare memorie\n"); return 2; }
+
+	prim[0] = 2, nrprime = 1;
+
+	for (d = 3; d <= radmax; d += 2)
+		if (!ciur[d]) {
+			prim = (unsigned*)realloc(prim, (nrprime + 1) * sizeof(unsigned));
+
+			if (!prim) { printf("Eroare realocare memorie\n"); return 3; }
+
+			prim[nrprime++] = d;
+		}
 	
 	FILE *fout = fopen("nrdiv.out", "w");
 
 	for (i = 0; i < n; i++) {
-		fscanf(fin, "%llu", &x);
+		nrd = 1;
 
-		if (x < 1 || x > VMAX) { printf("Eroare valoare x\n"); return 3; }
+		for (j = 0; j < nrprime && prim[j]*prim[j] <= v[i]; j++) {
+			for (p = 0; v[i] % prim[j] == 0; v[i] /= prim[j], p++);
 
-		fprintf(fout, "%u\n", nrdiv(x));
+			nrd *= (p + 1);	
+		}
+
+		if (v[i] > 1) nrd *= 2;
+		
+		fprintf(fout, "%u\n", nrd);
 	}
-	
-	fclose(fin);
+
 	fclose(fout);
+
+	free(v); 
+	free(ciur); 
+	free(prim);
 
 	return 0;
 }
-
-// scor 30
+// scor 100
